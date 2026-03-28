@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: app
-  namespace: mc-pos
+  name: mc-water
+  namespace: mc-water
   labels:
-    app: pos-frontend
+    app: mc-water
 spec:
   type: ClusterIP
   selector:
-    app: pos-frontend
+    app: mc-water
   ports:
     - name: http
       port: 80
@@ -17,35 +17,37 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pos-frontend
-  namespace: mc-pos
+  name: mc-water
+  namespace: mc-water
   labels:
-    app: pos-frontend
+    app: mc-water
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: pos-frontend
+      app: mc-water
   template:
     metadata:
       labels:
-        app: pos-frontend
+        app: mc-water
       annotations:
         # ArgoCD Image Updater annotations
-        argocd-image-updater.argoproj.io/image-list: jayr-abawag/p2-pos-frontend=ghcr.io/jayr-abawag/p2-pos-frontend:latest
-        argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-frontend.update-strategy: latest
-        argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-frontend.force-update: "true"
+        argocd-image-updater.argoproj.io/image-list: jayr-abawag/mc-water-v1=ghcr.io/jayr-abawag/mc-water-v1:latest
+        argocd-image-updater.argoproj.io/jayr-abawag/mc-water-v1.update-strategy: latest
+        argocd-image-updater.argoproj.io/jayr-abawag/mc-water-v1.force-update: "true"
     spec:
       containers:
-        - name: pos-frontend
-          image: ghcr.io/jayr-abawag/p2-pos-frontend:latest
+        - name: mc-water
+          image: ghcr.io/jayr-abawag/mc-water-v1:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
               name: http
-          envFrom:
-            - configMapRef:
-                name: pos-frontend-config
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
           readinessProbe:
             tcpSocket:
               port: 3000

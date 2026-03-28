@@ -1,0 +1,40 @@
+# Example ArgoCD Application for a second app
+# Copy this template and customize for each new application
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app2
+  namespace: argocd
+  labels:
+    app: app2
+    environment: production
+  annotations:
+    # ArgoCD Image Updater configuration
+    # Format: alias=registry/image:tag
+    argocd-image-updater.argoproj.io/image-list: jayr-abawag/app2=ghcr.io/jayr-abawag/app2:latest
+    argocd-image-updater.argoproj.io/jayr-abawag/app2.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jayr-abawag/devops-trei-infra.git
+    targetRevision: main
+    path: k8s/apps/app2
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app2
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

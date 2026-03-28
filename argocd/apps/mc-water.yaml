@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mc-water
+  namespace: argocd
+  labels:
+    app: mc-water
+    environment: production
+  annotations:
+    # ArgoCD Image Updater configuration
+    argocd-image-updater.argoproj.io/image-list: jayr-abawag/mc-water-v1=ghcr.io/jayr-abawag/mc-water-v1:latest
+    argocd-image-updater.argoproj.io/jayr-abawag/mc-water-v1.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jayr-abawag/devops-trei-infra.git
+    targetRevision: main
+    path: k8s/apps/mc-water
+    kustomize:
+      images:
+        - name: jayr-abawag/mc-water-v1
+          newName: ghcr.io/jayr-abawag/mc-water-v1
+          newTag: latest
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mc-water
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: p2-pos
+  namespace: argocd
+  labels:
+    app: p2-pos
+    environment: production
+  annotations:
+    # ArgoCD Image Updater configuration
+    argocd-image-updater.argoproj.io/image-list: jayr-abawag/p2-pos-backend=ghcr.io/jayr-abawag/p2-pos-backend:latest,jayr-abawag/p2-pos-frontend=ghcr.io/jayr-abawag/p2-pos-frontend:latest
+    argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-backend.update-strategy: latest
+    argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-frontend.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jayr-abawag/devops-trei-infra.git
+    targetRevision: main
+    path: k8s/apps/mc-pos
+    kustomize:
+      images:
+        - name: jayr-abawag/p2-pos-backend
+          newName: ghcr.io/jayr-abawag/p2-pos-backend
+          newTag: latest
+        - name: jayr-abawag/p2-pos-frontend
+          newName: ghcr.io/jayr-abawag/p2-pos-frontend
+          newTag: latest
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mc-pos
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

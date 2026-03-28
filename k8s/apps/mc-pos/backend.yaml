@@ -31,6 +31,11 @@ spec:
     metadata:
       labels:
         app: pos-backend
+      annotations:
+        # ArgoCD Image Updater annotations
+        argocd-image-updater.argoproj.io/image-list: jayr-abawag/p2-pos-backend=ghcr.io/jayr-abawag/p2-pos-backend:latest
+        argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-backend.update-strategy: latest
+        argocd-image-updater.argoproj.io/jayr-abawag/p2-pos-backend.force-update: "true"
     spec:
       containers:
         - name: pos-backend
