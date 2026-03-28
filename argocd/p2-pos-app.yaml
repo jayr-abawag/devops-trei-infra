@@ -14,13 +14,18 @@ spec:
 
   # Source configuration
   source:
-    # GitHub repository
-    repoURL: https://github.com/jayr-abawag/p2-pos.git
+    # Infrastructure repository (where K8s manifests live)
+    repoURL: https://github.com/jayr-abawag/devops-trei-infra.git
     targetRevision: main
-    path: k8s/mc-pos
-    # Directory options (for plain YAML manifests)
-    directory:
-      recurse: true
+    path: k8s/apps/mc-pos
+    # Kustomize for image tag updates
+    kustomize:
+      # Allow ArgoCD to update image tags
+      images:
+        - name: jayr-abawag/p2-pos-backend
+          newName: ghcr.io/jayr-abawag/p2-pos-backend
+        - name: jayr-abawag/p2-pos-frontend
+          newName: ghcr.io/jayr-abawag/p2-pos-frontend
 
   # Destination cluster
   destination:
@@ -34,6 +39,8 @@ spec:
       selfHeal: true
       # Auto-prune resources
       prune: true
+      # Allow empty commits to trigger sync
+      allowEmpty: false
     # Sync options
     syncOptions:
       - CreateNamespace=true
@@ -41,7 +48,7 @@ spec:
       - PruneLast=true
       - RespectIgnoreDifferences=true
 
-  # Ignore differences
+  # Ignore differences (allow manual scaling)
   ignoreDifferences:
     - group: apps
       kind: Deployment
@@ -51,3 +58,13 @@ spec:
       kind: Secret
       jsonPointers:
         - /data
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+        - /spec/clusterIPs
+
+  # Health checks
+  healthCheck:
+    # Number of seconds to wait before attempting health check
+    timeout: 300

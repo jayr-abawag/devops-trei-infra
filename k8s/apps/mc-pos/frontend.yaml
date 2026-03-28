@@ -1,19 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: pos-frontend
+  name: app
   namespace: mc-pos
   labels:
     app: pos-frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: pos-frontend
   ports:
     - name: http
-      port: 3000
+      port: 80
       targetPort: 3000
-      nodePort: 30300
 ---
 apiVersion: apps/v1
 kind: Deployment
