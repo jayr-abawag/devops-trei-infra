@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pos-db-bootstrap
+  namespace: mc-pos
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-bootstrap
+          image: ghcr.io/jayr-abawag/p2-pos-backend:latest
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cd /workspace/backend
+              pnpm prisma db push
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pos-secrets
+                  key: DATABASE_URL
+            - name: NODE_ENV
+              value: production

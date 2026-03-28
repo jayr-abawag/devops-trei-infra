@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pos-worker
+  namespace: mc-pos
+  labels:
+    app: pos-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pos-worker
+  template:
+    metadata:
+      labels:
+        app: pos-worker
+    spec:
+      containers:
+        - name: pos-worker
+          image: ghcr.io/jayr-abawag/p2-pos-backend:latest
+          imagePullPolicy: Always
+          command: ["node", "dist/worker.js"]
+          env:
+            - name: APP_ROLE
+              value: worker
+            - name: NODE_ENV
+              value: production
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pos-secrets
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

@@ -1,0 +1,91 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows:
+      - "Build and Push Frontend to GHCR"
+      - "Build and Push Backend to GHCR"
+    branches:
+      - main
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        default: 'frontend'
+        type: choice
+        options:
+          - frontend
+          - backend
+          - both
+
+env:
+  KUBE_NAMESPACE: mc-pos
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+          kubectl config current-context
+          kubectl get nodes
+
+      - name: Deploy Frontend
+        if: contains(github.event.workflow_run.name, 'Frontend') || inputs.service == 'frontend' || inputs.service == 'both'
+        run: |
+          export KUBECONFIG=kubeconfig
+          echo "🚀 Deploying frontend to Kubernetes..."
+
+          # Rollout deployment
+          kubectl rollout restart deployment pos-frontend -n ${{ env.KUBE_NAMESPACE }}
+
+          # Wait for rollout to complete
+          kubectl rollout status deployment pos-frontend -n ${{ env.KUBE_NAMESPACE }} --timeout=90s
+
+          # Get pod status
+          kubectl get pods -n ${{ env.KUBE_NAMESPACE }} -l app=pos-frontend
+
+          echo "✅ Frontend deployed successfully!"
+
+      - name: Deploy Backend
+        if: contains(github.event.workflow_run.name, 'Backend') || inputs.service == 'backend' || inputs.service == 'both'
+        run: |
+          export KUBECONFIG=kubeconfig
+          echo "🚀 Deploying backend to Kubernetes..."
+
+          # Rollout deployment
+          kubectl rollout restart deployment pos-backend -n ${{ env.KUBE_NAMESPACE }}
+
+          # Wait for rollout to complete
+          kubectl rollout status deployment pos-backend -n ${{ env.KUBE_NAMESPACE }} --timeout=90s
+
+          # Get pod status
+          kubectl get pods -n ${{ env.KUBE_NAMESPACE }} -l app=pos-backend
+
+          echo "✅ Backend deployed successfully!"
+
+      - name: Verify deployment
+        if: always()
+        run: |
+          export KUBECONFIG=kubeconfig
+
+          echo "📊 Deployment Summary:"
+          echo ""
+          kubectl get pods -n ${{ env.KUBE_NAMESPACE }}
+          echo ""
+          kubectl get services -n ${{ env.KUBE_NAMESPACE }}

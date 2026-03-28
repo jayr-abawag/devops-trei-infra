@@ -1,0 +1,29 @@
+# ============================================================
+# ingress-nginx — Kubernetes Ingress Controller
+#
+# Option A (Recommended) — Install via Helm:
+#
+#   helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+#   helm repo update
+#   helm install ingress-nginx ingress-nginx/ingress-nginx \
+#     --namespace ingress-nginx \
+#     --create-namespace \
+#     --set controller.service.type=ClusterIP
+#
+# NOTE: Set service type to ClusterIP — we don't need a LoadBalancer
+# because cloudflared is our external entry point, not a cloud LB.
+#
+# Option B — Install via kubectl (bare-metal manifest):
+#
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/baremetal/deploy.yaml
+#
+# After installing, verify it's running:
+#   kubectl get pods -n ingress-nginx
+#   kubectl get svc -n ingress-nginx
+#
+# The service name cloudflared points to:
+#   ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+# ============================================================
+
+# This file is intentionally a reference — use Helm or the manifest above.
+# No additional YAML needed here for ingress-nginx itself.

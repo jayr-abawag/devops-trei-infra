@@ -1,0 +1,42 @@
+# ============================================================
+# POS ingress — pos.coffeecoding.co
+# Routes through ingress-nginx to service `app` in `mc-pos`.
+# Service `app` maps to the POS frontend pods.
+# ============================================================
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: mc-pos
+spec:
+  selector:
+    app: pos-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pos-ingress
+  namespace: mc-pos
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: pos.coffeecoding.co
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  number: 80

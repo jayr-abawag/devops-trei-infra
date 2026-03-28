@@ -1,0 +1,199 @@
+# Talos Linux Cluster Setup Commands
+
+## Prerequisites
+- Talosctl installed
+- Target node: 192.168.0.240
+- Cluster endpoint: https://192.168.0.240:6443
+
+---
+
+## Phase 1: Initial Configuration Generation
+
+### Step 1: Generate Configuration
+```bash
+talosctl gen config venus https://192.168.0.240:6443
+```
+**Purpose**: Generate initial Talos configuration files for cluster "venus"
+
+---
+
+## Phase 2: Disk Preparation
+
+### Step 2: List Available Disks
+```bash
+talosctl disks --nodes 192.168.0.240 --insecure
+```
+**Purpose**: Identify available disks on the target node before installation
+
+---
+
+## Phase 3: Apply Control Plane Configuration
+
+### Step 3: Initial Control Plane Setup
+```bash
+talosctl apply-config --insecure --nodes 192.168.0.240 --file .\controlplane.yaml
+```
+**Purpose**: Apply control plane configuration to bootstrap the cluster
+
+**Note**: Use `--insecure` only for initial installation
+
+---
+
+## Phase 4: Bootstrap and Monitoring
+
+### Step 4: Monitor Bootstrap Process
+
+#### Dashboard
+```bash
+talosctl dashboard -n 192.168.0.240 -e 192.168.0.240 --talosconfig ./talosconfig
+```
+**Purpose**: Interactive dashboard for monitoring cluster bootstrapping
+
+#### Etcd Logs
+```bash
+talosctl logs -f -n 192.168.0.240 -e 192.168.0.240 --talosconfig ./talosconfig etcd
+```
+**Purpose**: Monitor etcd logs during bootstrap
+
+#### Service Status
+```bash
+talosctl -n 192.168.0.240 -e 192.168.0.240 --talosconfig ./talosconfig services
+```
+**Purpose**: Check status of all Talos services
+
+---
+
+## Phase 5: Kubernetes Access Setup
+
+### Step 5: Generate Kubeconfig
+```bash
+talosctl -n 192.168.0.240 -e 192.168.0.240 --talosconfig ./talosconfig kubeconfig ./kubeconfig
+```
+**Purpose**: Export Kubernetes configuration from Talos
+
+---
+
+## Phase 6: Configure Kubernetes CLI
+
+### Step 6: Set KUBECONFIG Environment Variable
+
+#### Linux/macOS
+```bash
+export KUBECONFIG=./kubeconfig
+```
+
+#### Windows PowerShell
+```powershell
+$env:KUBECONFIG = ".\kubeconfig"
+```
+
+**Purpose**: Point kubectl to the new cluster
+
+---
+
+## Phase 7: Enable Control Plane Scheduling
+
+### Step 7: Allow Workloads on Control Plane
+```bash
+talosctl apply-config -n 192.168.0.240 -e 192.168.0.240 --talosconfig ./talosconfig --file controlplane.yaml
+```
+**Purpose**: Re-apply control plane configuration with `allowSchedulingOnControlPlanes: true`
+
+**Note**: Requires updating controlplane.yaml with scheduling enabled before running
+
+---
+
+## Quick Reference
+
+### Common Variables
+```bash
+NODE_IP="192.168.0.240"
+ENDPOINT="https://192.168.0.240:6443"
+CLUSTER_NAME="venus"
+```
+
+### Talosctl Commands
+```bash
+# Get node status
+talosctl -n $NODE_IP -e $NODE_IP get members
+
+# Restart a service
+talosctl -n $NODE_IP -e $NODE_IP restart <service-name>
+
+# Update Talos
+talosctl -n $NODE_IP -e $NODE_IP upgrade --image ghcr.io/siderolabs/installer:v1.7.0
+```
+
+### Kubectl Commands
+```bash
+# Get nodes
+kubectl get nodes
+
+# Get all pods
+kubectl get pods -A
+
+# Get cluster info
+kubectl cluster-info
+```
+
+---
+
+## Troubleshooting
+
+### Bootstrap Issues
+- Check etcd logs: `talosctl logs etcd`
+- Verify service status: `talosctl services`
+- Review dashboard: `talosctl dashboard`
+
+### Configuration Errors
+- Validate YAML syntax
+- Check for proper indentation
+- Ensure cluster endpoint is reachable
+
+### Network Issues
+- Verify firewall rules (ports 6443, 50000-50100)
+- Check node connectivity: `ping 192.168.0.240`
+- Ensure API endpoint is accessible
+
+---
+
+## Security Notes
+
+⚠️ **IMPORTANT**:
+- Only use `--insecure` flag during initial installation
+- Remove insecure flags after cluster bootstrap
+- Rotate certificates after setup
+- Enable RBAC for production clusters
+- Regularly update Talos and Kubernetes versions
+
+---
+
+## File Structure
+
+```
+talos-config/
+├── controlplane.yaml    # Control plane configuration
+├── worker.yaml         # Worker node configuration
+├── talosconfig         # Talos CLI configuration
+├── kubeconfig          # Kubernetes configuration
+├── talos.commad        # This command reference
+├── k8s/                # Kubernetes manifests
+└── docker/             # Docker configurations
+```
+
+---
+
+## Version Information
+
+- **Talos Linux**: v1.7.0
+- **Kubernetes**: v1.29.0
+- **Cluster Name**: venus
+- **API Endpoint**: 192.168.0.240:6443
+
+---
+
+## Additional Resources
+
+- [Talos Documentation](https://www.talos.dev/v1.7/talos-guides/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [talosctl Cheat Sheet](https://www.talos.dev/v1.7/reference/talosctl/)

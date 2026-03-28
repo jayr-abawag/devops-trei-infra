@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pos-frontend-config
+  namespace: mc-pos
+data:
+  NEXT_PUBLIC_API_URL: "/api"

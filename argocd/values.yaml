@@ -1,0 +1,55 @@
+# ArgoCD Configuration for P2-POS GitOps Deployment
+
+global:
+  domain: argocd.coffeecoding.co
+
+# Enable/disable components
+controller:
+  enabled: true
+
+repoServer:
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+applicationSet:
+  enabled: true
+
+notifications:
+  enabled: false
+
+# ArgoCD Configs
+configs:
+  # ArgoCD server configuration
+  server:
+    # Run ArgoCD server in insecure mode (for local dev)
+    # DISABLE IN PRODUCTION
+    insecure: true
+
+  # Cluster credentials
+  cm:
+    # Enable admin user access
+    create: true
+    # Admin password (change this!)
+    # Generate with: bcrypt -r 10
+    admin.password: '$2a$10$X7ZG4ZQZ7ZG4ZQZ7ZG4ZQ.a'  # Default: argocd
+
+  # RBAC configuration
+  rbac:
+    # Default policy
+    policy.default: role:readonly
+    # Policy CSV
+    policy.csv: |
+      p, role:org-admin, applications, *, */*, allow
+      p, role:org-admin, clusters, get, *, allow
+      p, role:org-admin, repositories, get, *, allow
+      p, role:org-admin, repositories, create, *, allow
+      p, role:org-admin, repositories, update, *, allow
+      p, role:org-admin, repositories, delete, *, allow
+    # Scopes
+    scopes: '[croups]'

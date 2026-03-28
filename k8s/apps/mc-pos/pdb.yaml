@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pos-backend-pdb
+  namespace: mc-pos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: pos-backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pos-frontend-pdb
+  namespace: mc-pos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: pos-frontend

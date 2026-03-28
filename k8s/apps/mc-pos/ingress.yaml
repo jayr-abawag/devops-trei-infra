@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pos-ingress
+  namespace: mc-pos
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - pos.coffeecoding.co
+      secretName: pos-coffeecoding-co-tls
+  rules:
+    - host: pos.coffeecoding.co
+      http:
+        paths:
+          # API routes - no rewrite, pass through as-is
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: pos-backend
+                port:
+                  number: 3001
+          # All other routes to frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  number: 80

@@ -1,0 +1,53 @@
+# ArgoCD AppProject for P2-POS
+# Projects provide a logical grouping of applications
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: p2-pos
+  namespace: argocd
+spec:
+  # Project description
+  description: P2-POS Point of Sale System
+
+  # Source repositories
+  sourceRepos:
+    - https://github.com/jayr-abawag/p2-pos.git
+
+  # Destination clusters and namespaces
+  destinations:
+    - name: in-cluster
+      namespace: mc-pos
+    - name: '*'
+      namespace: mc-pos
+
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: rbac.authorization.k8s.io
+      kind: Role
+
+  # Namespace resource whitelist
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: policy
+      kind: PodDisruptionBudget
+
+  # Orphaned resources (disabled for now)
+  # orphanedResources: []

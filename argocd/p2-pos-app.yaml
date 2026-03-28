@@ -1,0 +1,53 @@
+# ArgoCD Application for P2-POS
+# This defines how ArgoCD should deploy and sync the P2-POS application
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: p2-pos
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project this application belongs to
+  project: p2-pos
+
+  # Source configuration
+  source:
+    # GitHub repository
+    repoURL: https://github.com/jayr-abawag/p2-pos.git
+    targetRevision: main
+    path: k8s/mc-pos
+    # Directory options (for plain YAML manifests)
+    directory:
+      recurse: true
+
+  # Destination cluster
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mc-pos
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      # Auto-sync when changes are detected
+      selfHeal: true
+      # Auto-prune resources
+      prune: true
+    # Sync options
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - RespectIgnoreDifferences=true
+
+  # Ignore differences
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data

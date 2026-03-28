@@ -1,0 +1,90 @@
+# ============================================================
+# STEP 1: Create the tunnel credentials secret
+# Run this command BEFORE applying this file:
+#
+#   kubectl create secret generic cloudflared-credentials \
+#     --from-file=credentials.json=<path-to-your-tunnel-creds.json> \
+#     -n cloudflared
+#
+# To get your credentials file:
+#   cloudflared tunnel token --cred-file tunnel-creds.json <TUNNEL_NAME_OR_ID>
+# ============================================================
+
+---
+# ConfigMap — cloudflared routing rules
+# Replace <YOUR_TUNNEL_ID> with your actual tunnel ID
+# (cloudflared tunnel list → copy the ID column)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: cloudflared
+data:
+  config.yaml: |
+    tunnel: bc6ecd05-e5eb-4ba0-83ed-8f9e23d47dfb
+    credentials-file: /etc/cloudflared/credentials.json
+    metrics: 0.0.0.0:2000
+
+    ingress:
+      - hostname: "*.coffeecoding.co"
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+
+      - service: http_status:404
+
+---
+# Deployment — cloudflared tunnel client
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflared
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2  # 2 replicas = HA; Cloudflare load-balances between them
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:latest
+          args:
+            - tunnel
+            - --config
+            - /etc/cloudflared/config.yaml
+            - --no-autoupdate
+            - run
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudflared/config.yaml
+              subPath: config.yaml
+            - name: credentials
+              mountPath: /etc/cloudflared/credentials.json
+              subPath: credentials.json
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: cloudflared-config
+        - name: credentials
+          secret:
+            secretName: cloudflared-credentials
